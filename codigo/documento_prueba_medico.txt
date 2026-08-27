@@ -1,0 +1,41 @@
+INFORME CLÍNICO — UNIDAD DE MEDICINA INTERNA Fecha: Julio 2025. Datos ficticios para pruebas de sistema.
+
+==================================================== PACIENTE_01
+Paciente_01 presenta el síntoma Fiebre y el síntoma Tos_Productiva. Paciente_01 presenta el síntoma Dificultad_Respiratoria y el síntoma Dolor_Toracico. Paciente_01 tiene como condición Alergia_Penicilina. Paciente_01 ha sido diagnosticado con Neumonia_Bacteriana. Paciente_01 recibe tratamiento con Azitromicina.
+
+==================================================== PACIENTE_02
+Paciente_02 presenta el síntoma Sibilancias y el síntoma Disnea. Paciente_02 presenta el síntoma Tos_Seca y el síntoma Taquicardia. Paciente_02 tiene como condición Asma. Paciente_02 ha sido diagnosticado con Crisis_Asmatica. Paciente_02 recibe tratamiento con Salbutamol y con Prednisona.
+
+==================================================== PACIENTE_04
+Paciente_04 presenta el síntoma Glucosa_Alta y el síntoma Presion_Alta. Paciente_04 presenta el síntoma Fatiga y el síntoma Poliuria. Paciente_04 tiene como condición Diabetes_Tipo2 y como condición HTA. Paciente_04 ha sido diagnosticado con Sindrome_Metabolico. Paciente_04 recibe tratamiento con Metformina y con Enalapril.
+
+==================================================== PACIENTE_07
+Paciente_07 presenta el síntoma Fiebre y el síntoma Hipotension. Paciente_07 presenta el síntoma Taquicardia, el síntoma Confusion y el síntoma Oliguria. Paciente_07 tiene como condición Insuficiencia_Renal. Paciente_07 ha sido diagnosticado con Sepsis. Paciente_07 recibe tratamiento con Ciprofloxacino.
+
+==================================================== PACIENTE_10
+Paciente_10 presenta el síntoma Dolor_Abdominal y el síntoma Nauseas. Paciente_10 presenta el síntoma Hematemesis. Paciente_10 tiene como condición Ulcera_Peptica y como condición Hipersensibilidad_AINE. Paciente_10 ha sido diagnosticado con Ulcera_Gastrica_Activa. Paciente_10 recibe tratamiento con Omeprazol.
+
+==================================================== FÁRMACOS
+Azitromicina pertenece al grupo Macrolidos y al grupo Antibiotico. Azitromicina trata la Neumonia_Bacteriana y la Exacerbacion_EPOC. Azitromicina es alternativa a Amoxicilina. Azitromicina requiere monitorización de QT_Prolongado.
+
+Salbutamol pertenece al grupo Broncodilatador y al grupo Beta2_Agonista. Salbutamol trata la Crisis_Asmatica y la Exacerbacion_EPOC. Salbutamol trata el Broncoespasmo. Salbutamol requiere monitorización de Frecuencia_Cardiaca.
+
+Metformina pertenece al grupo Biguanida y al grupo Antidiabetico_Oral. Metformina trata la Diabetes_Tipo2. Metformina está contraindicada con Insuficiencia_Renal. Metformina requiere monitorización de Funcion_Renal.
+
+Enalapril pertenece al grupo IECA y al grupo Antihipertensivo. Enalapril trata la HTA y la Insuficiencia_Cardiaca. Enalapril está contraindicado con Embarazo. Enalapril requiere monitorización de Funcion_Renal.
+
+Omeprazol pertenece al grupo IBP y al grupo Gastroprotector. Omeprazol trata la Ulcera_Gastrica_Activa y la Ulcera_Peptica.
+
+Ciprofloxacino pertenece al grupo Fluoroquinolona y al grupo Antibiotico. Ciprofloxacino trata la Sepsis y la Peritonitis_Bacteriana. Ciprofloxacino está contraindicado con Embarazo. Ciprofloxacino requiere monitorización de Funcion_Renal.
+
+AINE está contraindicado con Ulcera_Peptica. AINE está contraindicado con Hipersensibilidad_AINE. AINE está contraindicado con Embarazo. IECA está contraindicado con Embarazo. IECA requiere monitorización de Funcion_Renal.
+
+==================================================== PROTOCOLOS CLÍNICOS
+Protocolo_Neumonia requiere como síntoma Fiebre y Tos_Productiva. Protocolo_Neumonia requiere como síntoma Dificultad_Respiratoria. Protocolo_Neumonia trata la Neumonia_Bacteriana. Protocolo_Neumonia recibe tratamiento con Amoxicilina. Protocolo_Neumonia tiene como alternativa de tratamiento Azitromicina. Protocolo_Neumonia requiere la prueba Radiografia_Torax y Hemocultivo.
+
+Protocolo_Crisis_Asmatica requiere como síntoma Sibilancias y Disnea. Protocolo_Crisis_Asmatica requiere como condición Asma. Protocolo_Crisis_Asmatica trata la Crisis_Asmatica. Protocolo_Crisis_Asmatica recibe tratamiento con Salbutamol y con Prednisona. Protocolo_Crisis_Asmatica requiere la prueba Espirometria y Pulsioximetria.
+
+Protocolo_Sepsis requiere como síntoma Fiebre, Hipotension y Taquicardia. Protocolo_Sepsis trata la Sepsis. Protocolo_Sepsis recibe tratamiento con Ciprofloxacino. Protocolo_Sepsis requiere la prueba Hemocultivo y Lactato_Serico.
+
+==================================================== IMPLICACIONES CLÍNICAS
+Alergia_Penicilina implica Contraindicacion_Betalactamicos. Asma implica Riesgo_Broncoespasmo. Diabetes_Tipo2 implica Riesgo_Hipoglucemia. Diabetes_Tipo2 implica Riesgo_Nefropatia. HTA implica Riesgo_Cardiovascular. Insuficiencia_Renal implica Precaucion_Nefrotoxicos. Ulcera_Peptica implica Contraindicacion_AINE. Hipersensibilidad_AINE implica Contraindicacion_AINE. Embarazo implica Contraindicacion_IECA.
