@@ -3,6 +3,7 @@
 Aplicación de razonamiento médico que combina un Modelo de Lenguaje de Gran Tamaño (LLM), el Análisis Formal de Conceptos (FCA) y la recuperación aumentada basada en grafos (Graph-RAG) en una arquitectura **neuro-simbólica** desarrollada en R/Shiny.
 
 > Trabajo de Fin de Grado | Grado en Ingeniería Informática, Universidad de Málaga.
+
 > Departamento de Matemática Aplicada. Tutor: Ángel Mora Bonilla.
 
 ---
