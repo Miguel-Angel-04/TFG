@@ -2,7 +2,7 @@
 
 Aplicación de razonamiento médico que combina un Modelo de Lenguaje de Gran Tamaño (LLM), el Análisis Formal de Conceptos (FCA) y la recuperación aumentada basada en grafos (Graph-RAG) en una arquitectura **neuro-simbólica** desarrollada en R/Shiny.
 
-> Trabajo de Fin de Grado — Grado en Ingeniería Informática, Universidad de Málaga.
+> Trabajo de Fin de Grado | Grado en Ingeniería Informática, Universidad de Málaga.
 > Departamento de Matemática Aplicada. Tutor: Ángel Mora Bonilla.
 
 ---
@@ -136,9 +136,3 @@ La **verdad de referencia** (*gold*) procede de dos fuentes: una parte se deriva
 Las **métricas** son la exactitud (global y en las preguntas de sí/no), la precisión, el recall y su media armónica F1 en las preguntas de conjunto (con un tratamiento explícito de la abstención, que se excluye del promedio en lugar de contarse como precisión perfecta), y, como métrica central, la **tasa de alucinación**. Como los enfoques con modelo de lenguaje no son deterministas, se ejecutan varias veces y sus métricas se reportan como **media ± desviación típica**; los enfoques simbólicos, deterministas, se ejecutan una sola vez.
 
 El resultado principal confirma que los enfoques deterministas (FCA solo y Graph-RAG+FCA) presentan **alucinación nula**, frente a los que delegan el razonamiento en el modelo; y el sistema completo, gracias a la propagación de `implica`, mejora el *recall* de riesgos que el cierre lógico por sí solo no alcanza. Los experimentos se ejecutan con un modelo local mediante **Ollama** (temperatura cero), y cada evaluación puede exportarse como informe **HTML** autocontenido o como datos **CSV** para su reproducción.
-
----
-
-## Autoría
-
-Trabajo de Fin de Grado de Ingeniería Informática (Universidad de Málaga), tutorizado por Ángel Mora Bonilla (Departamento de Matemática Aplicada).
