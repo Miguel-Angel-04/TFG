@@ -1,5 +1,11 @@
 # presentacion.R — Funciones de apoyo a la interfaz (solo dan formato).
 
+# Extrae el número de una línea de regla ("Rule 12: ...") -> 12 (NA si no procede).
+num_regla <- function(linea) {
+  m <- sub("^\\s*Rule\\s*(\\d+):.*", "\\1", linea)
+  suppressWarnings(as.integer(m))
+}
+
 # Pasa las líneas de reglas ("Rule N: [A, B] ⇒ [C]") a un data.frame para la tabla.
 reglas_a_dataframe <- function(lineas) {
   vacio <- data.frame(Regla = character(0), Antecedente = character(0),

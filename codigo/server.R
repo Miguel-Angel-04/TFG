@@ -369,19 +369,30 @@ function(input, output, session) {
     lineas[grepl("^Rule \\d+:", trimws(lineas))]
   })
 
-  # Aplica los filtros (texto por lado + tamaño) a las reglas.
+  # Soporte de cada regla (fracción de objetos que la respaldan). Índice = nº de regla.
+  reglas_soporte <- reactive({
+    fc <- fc_global()
+    if (is.null(fc)) return(numeric(0))
+    s <- tryCatch(as.numeric(fc$implications$support()), error = function(e) NULL)
+    if (is.null(s)) numeric(0) else s
+  })
+
+  # Aplica los filtros (atributos por lado + tamaño + soporte mínimo) a las reglas.
   reglas_filtradas <- reactive({
     lineas <- reglas_lineas()
     if (length(lineas) == 0) return(character(0))
-    q    <- input$reglas_buscar; if (is.null(q)) q <- ""; q <- trimws(q)
+    terms <- input$reglas_buscar; if (is.null(terms)) terms <- character(0)
+    terms <- terms[nzchar(terms)]                         # atributos elegidos (selección exacta)
+    mmode <- input$reglas_match; if (is.null(mmode)) mmode <- "todos"  # todos = Y ; alguno = O
     lado <- input$reglas_lado;   if (is.null(lado)) lado <- "cualquiera"
     modo <- input$reglas_modo_tam; if (is.null(modo)) modo <- "max"
     maxp <- input$reglas_maxprem   # NA / vacío = sin límite en antecedente
     maxc <- input$reglas_maxconc   # NA / vacío = sin límite en consecuente
-    normx  <- function(x) tolower(iconv(x, to = "ASCII//TRANSLIT"))
-    n_attr <- function(s) {
-      s <- sub(".*\\[", "", sub("\\].*", "", s))         # contenido entre corchetes
-      length(Filter(nzchar, trimws(unlist(strsplit(s, ",")))))
+    minsop <- input$reglas_minsop  # % mínimo de soporte (NA = sin límite)
+    sop    <- reglas_soporte()
+    attrs_de <- function(s) {                             # atributos (exactos) de un lado
+      s <- sub(".*\\[", "", sub("\\].*", "", s))          # contenido entre corchetes
+      Filter(nzchar, trimws(unlist(strsplit(s, ","))))
     }
     cumple_tam <- function(n, lim) {
       if (is.null(lim) || is.na(lim)) return(TRUE)        # sin límite
@@ -391,15 +402,38 @@ function(input, output, session) {
       partes <- strsplit(l, "⇒", fixed = TRUE)[[1]]
       prem <- if (length(partes) >= 1) partes[1] else ""
       conc <- if (length(partes) >= 2) partes[2] else ""
-      if (!cumple_tam(n_attr(prem), maxp) || !cumple_tam(n_attr(conc), maxc)) return(FALSE)
-      if (nzchar(q)) {
-        objetivo <- switch(lado, premisa = prem, conclusion = conc, l)
-        if (!grepl(normx(q), normx(objetivo), fixed = TRUE)) return(FALSE)
+      ap <- attrs_de(prem); ac <- attrs_de(conc)
+      if (!cumple_tam(length(ap), maxp) || !cumple_tam(length(ac), maxc)) return(FALSE)
+      if (length(terms) > 0) {
+        side_attrs <- switch(lado, premisa = ap, conclusion = ac, unique(c(ap, ac)))
+        hits <- terms %in% side_attrs
+        if (identical(mmode, "alguno")) { if (!any(hits)) return(FALSE) }
+        else                            { if (!all(hits)) return(FALSE) }
+      }
+      if (!is.null(minsop) && !is.na(minsop) && length(sop) > 0) {
+        nr <- num_regla(l)
+        if (!is.na(nr) && nr >= 1 && nr <= length(sop) && sop[nr] * 100 < minsop) return(FALSE)
       }
       TRUE
     }, logical(1))
     lineas[keep]
   })
+
+  # Exporta a CSV las reglas actualmente filtradas (con soporte).
+  output$dl_reglas_csv <- downloadHandler(
+    filename = function() sprintf("reglas_fca_%s.csv", format(Sys.time(), "%Y%m%d_%H%M")),
+    content  = function(file) {
+      lin <- reglas_filtradas()
+      df  <- reglas_a_dataframe(lin)
+      sop <- reglas_soporte()
+      if (nrow(df) > 0 && length(sop) > 0) {
+        nums <- vapply(lin, num_regla, integer(1))
+        df$Soporte_pct <- ifelse(!is.na(nums) & nums >= 1 & nums <= length(sop),
+                                 round(sop[nums] * 100, 1), NA_real_)
+      }
+      utils::write.csv(df, file, row.names = FALSE, fileEncoding = "UTF-8")
+    }
+  )
 
   # Controles de rango (solo aparecen cuando hay reglas)
   output$controles_reglas <- renderUI({
@@ -408,18 +442,28 @@ function(input, output, session) {
     tagList(
       div(style = "font-size:12px; color:#555; margin-bottom:6px;",
           sprintf("Total: %d reglas. Filtra y elige el rango:", n)),
-      textInput("reglas_buscar", "Buscar atributo", value = "",
-                placeholder = "p.ej. Asma", width = "100%"),
+      selectizeInput("reglas_buscar", "Buscar atributo(s)",
+                     choices = sort(atributos_global()), multiple = TRUE,
+                     options = list(placeholder = "Elige atributos…"), width = "100%"),
       radioButtons("reglas_lado", "Buscar en",
                    choices  = c("Cualquiera" = "cualquiera", "Antecedente" = "premisa",
                                 "Consecuente" = "conclusion"),
                    selected = "cualquiera", inline = TRUE),
+      radioButtons("reglas_match", "Coincidencia",
+                   choices  = c("Todos" = "todos", "Alguno" = "alguno"),
+                   selected = "todos", inline = TRUE),
       div(style = "font-size:11px; color:#888; margin-bottom:4px;", "Nº de atributos por lado:"),
       div(style = "display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; margin-bottom:8px;",
           selectInput("reglas_modo_tam", NULL, choices = c("Máx." = "max", "Mín." = "min"),
                       selected = "max", width = "80px"),
           numericInput("reglas_maxprem", "Antecedente", value = NA, min = 1, max = 99, width = "130px"),
           numericInput("reglas_maxconc", "Consecuente", value = NA, min = 1, max = 99, width = "130px")
+      ),
+      div(style = "font-size:11px; color:#888; margin-bottom:4px;", "Soporte mínimo (%):"),
+      div(style = "display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; margin-bottom:8px;",
+          numericInput("reglas_minsop", NULL, value = NA, min = 0, max = 100, width = "110px"),
+          downloadButton("dl_reglas_csv", "Exportar CSV",
+                         class = "btn-sm btn-outline-secondary", style = "height:38px;")
       ),
       div(style = "font-size:11px; color:#888; margin-bottom:4px;", "Rango a mostrar:"),
       div(style = "display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; margin-bottom:8px;",
@@ -449,13 +493,17 @@ function(input, output, session) {
       partes    <- strsplit(bloque, ":", fixed = TRUE)[[1]]
       titulo    <- trimws(partes[1])
       contenido <- trimws(gsub("\\s+", " ", paste(partes[-1], collapse = ":")))
+      sop <- reglas_soporte(); nr <- num_regla(bloque)
+      badge <- if (length(sop) > 0 && !is.na(nr) && nr >= 1 && nr <= length(sop))
+        span(style = "color:#8a929b; font-size:11px; margin-left:8px;",
+             sprintf("· soporte %s%%", format(round(sop[nr] * 100, 1), trim = TRUE))) else NULL
       return(tagList(
         div(style = "font-size:12px; color:#777; margin-bottom:4px;",
             sprintf("Mostrando la Regla %d", as.integer(concreta))),
         div(class = "reglas-container",
             div(class = "regla-bloque",
                 span(class = "rule-header", paste0(titulo, ":")),
-                span(class = "regla-contenido", contenido)))
+                span(class = "regla-contenido", contenido), badge))
       ))
     }
 
@@ -474,14 +522,19 @@ function(input, output, session) {
       hasta <- max(desde, min(hasta, n))
     }
 
+    sop <- reglas_soporte()
     seleccion <- lineas[desde:hasta]
     elementos <- lapply(seleccion, function(bloque) {
       partes    <- strsplit(bloque, ":", fixed = TRUE)[[1]]
       titulo    <- trimws(partes[1])
       contenido <- trimws(gsub("\\s+", " ", paste(partes[-1], collapse = ":")))
+      nr    <- num_regla(bloque)
+      badge <- if (length(sop) > 0 && !is.na(nr) && nr >= 1 && nr <= length(sop))
+        span(style = "color:#8a929b; font-size:11px; margin-left:8px;",
+             sprintf("· soporte %s%%", format(round(sop[nr] * 100, 1), trim = TRUE))) else NULL
       div(class = "regla-bloque",
           span(class = "rule-header", paste0(titulo, ":")),
-          span(class = "regla-contenido", contenido))
+          span(class = "regla-contenido", contenido), badge)
     })
 
     tagList(
