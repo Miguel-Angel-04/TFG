@@ -13,7 +13,7 @@ La mayoría de los sistemas basados en LLM delegan el razonamiento en el propio 
 
 - **El LLM solo extrae y redacta.** Nunca razona. Se encarga de convertir un documento clínico en tripletas de conocimiento y de redactar en lenguaje natural la respuesta ya calculada.
 - **El FCA es el motor de razonamiento determinista.** A partir del contexto formal y de la base de implicaciones de Duquenne-Guigues, el **cierre lógico** (encadenamiento hacia adelante hasta punto fijo) deduce la respuesta sin ninguna alucinación.
-- **Graph-RAG recupera lo que la lógica de co-ocurrencia no alcanza.** Propaga por el grafo *únicamente* la relación `implica`, recuperando riesgos y consecuencias que el cierre por sí solo no deduce.
+- **Graph-RAG recupera lo que la lógica de co-ocurrencia no alcanza.** Propaga por el grafo únicamente la relación `implica`, recuperando riesgos y consecuencias que el cierre por sí solo no deduce.
 
 El resultado es un sistema en el que el razonamiento es **trazable, auditable y sin alucinación**, y en el que cada respuesta puede acompañarse de su traza lógica y de visualizaciones interactivas.
 
@@ -23,16 +23,16 @@ El resultado es un sistema en el que el razonamiento es **trazable, auditable y 
 
 ```
 Documento clínico / CSV
-        │
-   [LLM extractor]  ──►  Tripletas (Sujeto, Relación, Objeto)
-        │
-   [Motor simbólico FCA]  ──►  Contexto formal + implicaciones + cierre lógico
-        │
-   [Graph-RAG]  ──►  Propagación de `implica` (riesgos/consecuencias)
-        │
-   [Orquestador híbrido]  ──►  Respuesta determinista + traza
-        │
-   [LLM redactor]  ──►  Respuesta en lenguaje natural
+        |
+   [LLM extractor]  -->  Tripletas (Sujeto, Relación, Objeto)
+        |
+   [Motor simbólico FCA]  -->  Contexto formal + implicaciones + cierre lógico
+        |
+   [Graph-RAG]  -->  Propagación de `implica` (riesgos/consecuencias)
+        |
+   [Orquestador híbrido]  -->  Respuesta determinista + traza
+        |
+   [LLM redactor]  -->  Respuesta en lenguaje natural
 ```
 
 Cada capa está aislada: el razonamiento (FCA + grafo) es determinista, y el LLM queda acotado a la entrada (extracción) y la salida (redacción).
@@ -107,18 +107,35 @@ Los capítulos de la memoria se encuentran en los archivos `memoria_*.md` (marco
 
 ## Tipos de pregunta
 
-- **Factual**: "¿Qué síntomas tiene el Paciente_01?"
-- **Categórica**: "¿Qué tratamiento recibe el Paciente_03?"
-- **Sí/No**: "¿El Paciente_02 tiene asma?"
-- **Inversa**: "¿Qué pacientes reciben Metformina?"
-- **Sobre protocolos**: "¿Qué pruebas requiere el protocolo de neumonía?"
-- **Hipotética**: "Imagina un paciente con Fiebre y Tos Productiva, ¿qué se deduciría?"
+La aplicación responde en lenguaje natural a preguntas ancladas siempre a los datos cargados. Para la validación, la batería de preguntas **se genera de forma programática a partir de los propios datos**, recorriendo tanto la matriz objeto-atributo del contexto formal como el grafo de conocimiento. Así cada pregunta lleva asociada su respuesta de referencia sin intervención manual y la batería crece automáticamente al ampliar el conjunto de datos. Se producen cuatro familias de forma automática, más un conjunto anotado a mano:
+
+- **Hipotéticas por categoría (riesgos)** - "Si un paciente tiene [condición], ¿qué riesgos o consecuencias tendría?". Su respuesta de referencia son exactamente los nodos alcanzables a través de la relación `implica` desde esa condición, de modo que evalúan directamente la recuperación por grafo.
+- **Sí/No positivas** - "Si un paciente tiene [condición], ¿tendría [uno de sus riesgos]?", con respuesta correcta SÍ. Comprueban que el sistema deduce lo que sí se sigue lógicamente.
+- **Sí/No negativas** - de forma simétrica, "Si un paciente tiene [condición], ¿tendría [un riesgo de otra condición]?", eligiendo un riesgo que no se deduce; la respuesta correcta es NO. Penalizan afirmar algo que no procede.
+- **Inversas factuales** - "¿Qué pacientes tienen [atributo]?", cuya referencia es la lista de pacientes que lo poseen según la matriz de datos. Contrastan el anclaje de las respuestas frente a la invención de sujetos.
+- **Anotadas a mano** - preguntas cuya respuesta correcta se fija manualmente a partir de hechos directos y verificables (por ejemplo, si un paciente concreto tiene una condición, o si un fármaco está contraindicado con una alergia). Al ser independientes del razonamiento del sistema, **rompen la posible circularidad** de la evaluación.
+
+Cada pregunta generada se identifica internamente mediante un **prefijo que codifica su tipo**, seguido de la entidad sobre la que versa, lo que facilita su trazabilidad en las tablas de resultados.
 
 ---
 
 ## Evaluación
 
-El sistema se valida por ablación comparando cinco enfoques —LLM solo, RAG+LLM, Graph-RAG+LLM, FCA solo y Graph-RAG+FCA— sobre una batería de preguntas con verdad de referencia **automática** (derivada del grafo) y **manual** (anotada a mano, para romper la circularidad). Las métricas incluyen exactitud, precisión/recall/F1 y **tasa de alucinación**; los enfoques deterministas mantienen alucinación nula.
+La evaluación se plantea para verificar que trasladar el razonamiento a un motor simbólico determinista, en lugar de confiarlo al modelo de lenguaje, elimina las alucinaciones sin renunciar a la calidad de las respuestas. Se ponen a prueba tres afirmaciones: (1) el razonamiento sobre FCA no produce afirmaciones injustificadas; (2) la capa Graph-RAG aporta riesgos y consecuencias que el cierre lógico por sí solo no recupera; y (3) el sistema completo supera a los enfoques que delegan el razonamiento en el modelo de lenguaje.
+
+Se comparan **cinco enfoques** que se diferencian solo en cómo recuperan y razonan, de modo que las diferencias puedan atribuirse a esa pieza concreta:
+
+- **LLM solo** : línea base, sin recuperación de conocimiento.
+- **RAG + LLM** : recuperación por similitud de las tripletas más parecidas a la pregunta.
+- **Graph-RAG + LLM** : recuperación del vecindario de las entidades en el grafo.
+- **FCA solo** : razonamiento por cierre lógico, sin propagación por el grafo.
+- **Graph-RAG + FCA** : (sistema completo) propagación de `implica` + razonamiento simbólico.
+
+La **verdad de referencia** (*gold*) procede de dos fuentes: una parte se deriva automáticamente de la estructura del conocimiento y otra se **anota a mano** a partir de hechos directos y verificables. Esta doble procedencia es deliberada: el conjunto anotado a mano ancla la evaluación en hechos independientes del sistema y **rompe la circularidad** de evaluar el motor contra su propia salida. Para medir la alucinación se toma como referencia la **verdad lógica** del conocimiento (el cierre completo de lo que se deduce): se considera alucinación toda afirmación que quede fuera de ese cierre.
+
+Las **métricas** son la exactitud (global y en las preguntas de sí/no), la precisión, el recall y su media armónica F1 en las preguntas de conjunto (con un tratamiento explícito de la abstención, que se excluye del promedio en lugar de contarse como precisión perfecta), y, como métrica central, la **tasa de alucinación**. Como los enfoques con modelo de lenguaje no son deterministas, se ejecutan varias veces y sus métricas se reportan como **media ± desviación típica**; los enfoques simbólicos, deterministas, se ejecutan una sola vez.
+
+El resultado principal confirma que los enfoques deterministas (FCA solo y Graph-RAG+FCA) presentan **alucinación nula**, frente a los que delegan el razonamiento en el modelo; y el sistema completo, gracias a la propagación de `implica`, mejora el *recall* de riesgos que el cierre lógico por sí solo no alcanza. Los experimentos se ejecutan con un modelo local mediante **Ollama** (temperatura cero), y cada evaluación puede exportarse como informe **HTML** autocontenido o como datos **CSV** para su reproducción.
 
 ---
 
